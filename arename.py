@@ -8,7 +8,7 @@ if len(sys.argv) != 1:
 else:
     paths = ['.']
 
-searchString = '\[(.*?)\]'
+searchString = '\(.*?\)|\[.*?\]'
 
 # Generator to intersperse a delimiter into an interable
 def joinit(iterable, delimiter):
@@ -19,19 +19,25 @@ def joinit(iterable, delimiter):
         yield x
 
 for path in paths:
-    print(path)
+    print(os.path.abspath(path))
     for item in os.listdir(path):
         if os.path.isdir(item):
             continue
         name = os.fspath(item)
+        oldname = os.fspath(item)
         if bool(re.search(searchString,name)):
-            name = name.split('.')
-            newName = []
+            # Strip regex matches and split into list of parts
+            name = re.sub(searchString,'',name).split('.')
+            newNameList = []
+            # Accumulate new list with whitespace stripped
             for part in name:
-                newName = newName + [re.sub(searchString,'',part).strip()]
-            nameParts = joinit(newName, '.')
+                # newNameList
+                newNameList = newNameList + [part.strip()]
+            # Add back all of the '.' lost in filename during split as list elements
+            newNameList = joinit(newNameList, '.')
             name = ''
-            for i in nameParts:
-                name = name + i
-            print(name)
+            for part in newNameList:
+                 name = name + part
+            print(oldname + ' -> ' + name)
         os.rename(os.path.join(path,item), os.path.join(path,name))
+        
